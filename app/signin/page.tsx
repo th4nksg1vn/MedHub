@@ -16,25 +16,37 @@ export default function SignIn() {
     setError('');
 
     // Mock authentication
-    if (email === 'patient@example.com' || email === 'john@example.com') {
-      localStorage.setItem('user', JSON.stringify({ email, role: 'patient', name: 'John Anderson' }));
+    if (email === 'john.anderson@medihub.com' && password) {
+      localStorage.setItem('user', JSON.stringify({ 
+        email, 
+        role: 'patient', 
+        name: 'John Anderson' 
+      }));
       router.push('/dashboard/patient');
       return;
     }
     
-    if (email === 'doctor@hospital.com' || email === 'sarah@hospital.com') {
-      localStorage.setItem('user', JSON.stringify({ email, role: 'doctor', name: 'Dr. Sarah Johnson' }));
+    if (email === 'sarah.johnson@hospital.com' && password) {
+      localStorage.setItem('user', JSON.stringify({ 
+        email, 
+        role: 'doctor', 
+        name: 'Dr. Sarah Johnson' 
+      }));
       router.push('/dashboard/doctor');
       return;
     }
 
-    if (email === 'admin@hospital.com') {
-      localStorage.setItem('user', JSON.stringify({ email, role: 'admin', name: 'Admin User' }));
+    if (email === 'admin@hospital.com' && password) {
+      localStorage.setItem('user', JSON.stringify({ 
+        email, 
+        role: 'admin', 
+        name: 'Admin User' 
+      }));
       router.push('/dashboard/admin');
       return;
     }
 
-    setError('Invalid credentials. Try: patient@example.com, doctor@hospital.com, or admin@hospital.com');
+    setError('Invalid email or password');
   };
 
   return (

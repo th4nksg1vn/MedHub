@@ -1,0 +1,35 @@
+{
+  "patient": {
+    "email": "john.anderson@medihub.com",
+    "password": "patient123",
+    "name": "John Anderson",
+    "role": "patient",
+    "ghanaCardId": "GHA-123456789-0",
+    "firstName": "John",
+    "surname": "Anderson",
+    "phone": "+233 24 123 4567"
+  },
+  "doctor": {
+    "email": "sarah.johnson@hospital.com",
+    "password": "doctor123",
+    "name": "Dr. Sarah Johnson",
+    "role": "doctor",
+    "specialty": "Administrator",
+    "ghanaCardId": "GHA-987654321-1",
+    "firstName": "Sarah",
+    "surname": "Johnson",
+    "phone": "+233 20 987 6543"
+  },
+  "admin": {
+    "email": "admin@hospital.com",
+    "password": "admin123",
+    "name": "Admin User",
+    "role": "admin",
+    "specialty": "System Administrator",
+    "ghanaCardId": "GHA-555555555-5",
+    "firstName": "Admin",
+    "surname": "User",
+    "phone": "+233 50 111 2222"
+  }
+}
+
