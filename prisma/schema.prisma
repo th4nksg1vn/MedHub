@@ -56,8 +56,6 @@ model User {
   sessions                Session[]
   passwordResets          PasswordReset[]
 
-  @@index([email])
-  @@index([role])
   @@map("users")
 }
 
@@ -75,9 +73,7 @@ model RefreshToken {
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([token])
   @@index([userId])
-  @@index([expiresAt])
   @@map("refresh_tokens")
 }
 
@@ -93,8 +89,6 @@ model Session {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([userId])
-  @@index([active])
-  @@index([expiresAt])
   @@map("sessions")
 }
 
@@ -107,9 +101,7 @@ model PasswordReset {
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([token])
   @@index([userId])
-  @@index([used])
   @@map("password_resets")
 }
 
@@ -137,7 +129,6 @@ model Organization {
   auditLogs AuditLog[]
   documents PatientDocument[]
 
-  @@index([type])
   @@map("organizations")
 }
 
@@ -156,7 +147,6 @@ model UserOrganization {
 
   @@unique([userId, organizationId])
   @@index([organizationId])
-  @@index([userId])
   @@map("user_organizations")
 }
 
@@ -207,8 +197,6 @@ model Patient {
   documents PatientDocument[]
 
   @@index([organizationId])
-  @@index([lastName, firstName])
-  @@index([externalPatientId])
   @@map("patients")
 }
 
@@ -233,7 +221,6 @@ model PatientDocument {
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([patientId])
-  @@index([organizationId])
   @@map("patient_documents")
 }
 
@@ -257,7 +244,5 @@ model AuditLog {
 
   @@index([organizationId])
   @@index([userId])
-  @@index([action])
-  @@index([createdAt])
   @@map("audit_logs")
 }

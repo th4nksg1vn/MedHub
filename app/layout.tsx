@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Nav from '../components/Nav';
+import ConditionalLayout from '../components/ConditionalLayout';
 import ClientProviders from '../components/ClientProviders';
 
 const geistSans = Geist({
@@ -35,10 +35,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             __html: `try{(function(){const el=document.documentElement; if(!el) return; for(const a of Array.from(el.attributes)){ if(/^crx/i.test(a.name)){ el.removeAttribute(a.name); } }})();}catch(e){}`,
           }}
         />
-        <Nav />
-        <ClientProviders>
-          <div className="max-w-6xl mx-auto px-4 py-6">{children}</div>
-        </ClientProviders>
+        <ConditionalLayout>
+          <ClientProviders>
+            {children}
+          </ClientProviders>
+        </ConditionalLayout>
       </body>
     </html>
   );
