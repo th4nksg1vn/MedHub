@@ -1,0 +1,263 @@
+// Prisma Schema for MediHub Medical Management System
+// Users, Organizations, Staff, Patients, and Audit System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATION & USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  PHARMACIST
+  LAB_TECH
+  PATIENT
+}
+
+enum OrganizationType {
+  HOSPITAL
+  CLINIC
+  PHARMACY
+  LABORATORY
+  DIAGNOSTIC_CENTER
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  firstName     String?   @map("first_name")
+  lastName      String?   @map("last_name")
+  phone         String?
+  role          UserRole  @default(PATIENT)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  active        Boolean   @default(true)
+  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  organizationMemberships UserOrganization[]
+  patientRecords          Patient[]
+  createdAuditLogs        AuditLog[]
+  uploadedDocuments       PatientDocument[]
+  refreshTokens           RefreshToken[]
+  sessions                Session[]
+  passwordResets          PasswordReset[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================
+// JWT AUTHENTICATION
+// ============================================
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  active    Boolean  @default(true)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([active])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([token])
+  @@index([userId])
+  @@index([used])
+  @@map("password_resets")
+}
+
+// ============================================
+// ORGANIZATION MANAGEMENT
+// ============================================
+
+model Organization {
+  id           String            @id @default(uuid()) @db.Uuid
+  name         String
+  type         OrganizationType?
+  address      Json?
+  contactEmail String?           @map("contact_email")
+  contactPhone String?           @map("contact_phone")
+  servicesData Json?             @map("services")
+  verified     Boolean           @default(false)
+  logoUrl      String?           @map("logo_url")
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  members   UserOrganization[]
+  services  Service[]
+  patients  Patient[]
+  auditLogs AuditLog[]
+  documents PatientDocument[]
+
+  @@index([type])
+  @@map("organizations")
+}
+
+// Many-to-Many relationship between Users and Organizations
+model UserOrganization {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           UserRole // User's role within this organization
+  active         Boolean      @default(true)
+  invitedBy      String?      @map("invited_by") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("user_organizations")
+}
+
+// ============================================
+// SERVICES
+// ============================================
+
+model Service {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  metadata       Json?
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([organizationId])
+  @@map("services")
+}
+
+// ============================================
+// PATIENT MANAGEMENT
+// ============================================
+
+model Patient {
+  id                String       @id @default(uuid()) @db.Uuid
+  organizationId    String       @map("organization_id") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  externalPatientId String?      @unique @map("external_patient_id")
+  firstName         String?      @map("first_name")
+  lastName          String?      @map("last_name")
+  gender            String?
+  dob               DateTime?    @db.Date
+  heightCm          Int?         @map("height_cm")
+  weightKg          Int?         @map("weight_kg")
+  bmi               Decimal?     @db.Decimal(10, 2)
+  allergies         Json?
+  address           Json?
+  contact           Json?
+  metadata          Json?
+  createdBy         String       @map("created_by") @db.Uuid
+  creator           User         @relation(fields: [createdBy], references: [id])
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  documents PatientDocument[]
+
+  @@index([organizationId])
+  @@index([lastName, firstName])
+  @@index([externalPatientId])
+  @@map("patients")
+}
+
+// ============================================
+// DOCUMENT MANAGEMENT
+// ============================================
+
+model PatientDocument {
+  id             String       @id @default(uuid()) @db.Uuid
+  patientId      String       @map("patient_id") @db.Uuid
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy     String       @map("uploaded_by") @db.Uuid
+  uploader       User         @relation(fields: [uploadedBy], references: [id])
+  storagePath    String?      @map("storage_path")
+  fileName       String?      @map("file_name")
+  fileType       String?      @map("file_type")
+  fileSize       Int?         @map("file_size")
+  metadata       Json?
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([patientId])
+  @@index([organizationId])
+  @@map("patient_documents")
+}
+
+// ============================================
+// AUDIT & TRACKING
+// ============================================
+
+model AuditLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @map("organization_id") @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId         String?       @map("user_id") @db.Uuid
+  user           User?         @relation(fields: [userId], references: [id])
+  action         String
+  targetTable    String?       @map("target_table")
+  targetId       String?       @map("target_id")
+  details        Json?
+  ipAddress      String?       @map("ip_address")
+  userAgent      String?       @map("user_agent")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
