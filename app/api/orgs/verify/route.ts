@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import serverSupabase from '../../../../lib/supabaseClient';
+import { getAuthUser } from '../../../../lib/auth';
 
-// Admin endpoint to mark an organization as verified (admin-only — dev headers)
-function getUserFromReq(req: NextRequest) {
-  const externalUserId = req.headers.get('x-external-user-id') || undefined;
-  const orgId = req.headers.get('x-org-id') || undefined;
-  if (!externalUserId) return null;
-  return { externalUserId, orgId };
-}
-
+// Admin-only endpoint. Requires INTERNAL_ADMIN_API_KEY via header 'x-internal-admin-key'
 export async function POST(req: NextRequest) {
-  const user = getUserFromReq(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const provided = req.headers.get('x-internal-admin-key') || '';
+  const expected = process.env.INTERNAL_ADMIN_API_KEY || '';
+  if (!expected || provided !== expected) {
+    return NextResponse.json({ error: 'Unauthorized - internal admin key required' }, { status: 401 });
+  }
 
   const body = await req.json();
   if (!body.organization_id) return NextResponse.json({ error: 'organization_id required' }, { status: 400 });
 
-  // In production, ensure the user has admin privileges for the org being verified.
   const { data, error } = await serverSupabase
     .from('organizations')
     .update({ verified: true })

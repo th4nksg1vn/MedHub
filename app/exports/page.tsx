@@ -1,15 +1,12 @@
-"use client"
+"use client";
 
-import React from "react";
+import React from 'react';
 
 export default function Page() {
   async function handleExport(e: React.FormEvent) {
     e.preventDefault();
-    const orgId = (document.getElementById("orgId") as HTMLInputElement).value;
-    const url = `/api/exports/patients?orgId=${encodeURIComponent(
-      orgId
-    )}&anonymize=true`;
-    // navigate to the export URL which should return a CSV
+    const orgId = (document.getElementById('orgId') as HTMLInputElement).value;
+    const url = `/api/exports/patients?orgId=${encodeURIComponent(orgId)}&anonymize=true`;
     window.location.href = url;
   }
 
@@ -20,11 +17,7 @@ export default function Page() {
       <form onSubmit={handleExport} className="space-y-4 max-w-md">
         <div>
           <label className="block text-sm">Organization ID</label>
-          <input
-            id="orgId"
-            className="mt-1 block w-full border rounded p-2"
-            placeholder="org id"
-          />
+          <input id="orgId" className="mt-1 block w-full border rounded p-2" placeholder="org id" />
         </div>
         <div>
           <button className="px-4 py-2 bg-green-600 text-white rounded">Download CSV</button>

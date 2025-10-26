@@ -9,35 +9,60 @@ function getUserFromReq(req: NextRequest) {
   return { externalUserId, orgId };
 }
 
+import { getAuthUser, requireAuthOr401 } from '../../../lib/auth';
+import { assertUserHasRole } from '../../../lib/roles';
+
 export async function GET(req: NextRequest) {
-  const user = getUserFromReq(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let authUser = null;
+  try {
+    authUser = await getAuthUser(req);
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 401 });
+  }
+  const early = requireAuthOr401(authUser);
+  if (early) return early;
+
+  // only org_admins should list/manage staff
+  const allowed = await assertUserHasRole(authUser!.externalUserId, authUser!.orgId || '', ['org_admin']);
+  if (!allowed) return NextResponse.json({ error: 'Forbidden - requires org_admin' }, { status: 403 });
 
   const { data, error } = await serverSupabase
     .from('organization_staff')
     .select('*')
-    .eq('organization_id', user.orgId);
+    .eq('organization_id', authUser!.orgId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
-  const user = getUserFromReq(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let authUser = null;
+  try {
+    authUser = await getAuthUser(req);
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 401 });
+  }
+  const early = requireAuthOr401(authUser);
+  if (early) return early;
+
+  // only org_admins can invite/upsert staff
+  const allowedInvite = await assertUserHasRole(authUser!.externalUserId, authUser!.orgId || '', ['org_admin']);
+  if (!allowedInvite) return NextResponse.json({ error: 'Forbidden - requires org_admin' }, { status: 403 });
 
   const body = await req.json();
-  if (!body.external_user_id || !body.role) {
-    return NextResponse.json({ error: 'external_user_id and role required' }, { status: 400 });
+  // For invite flow we require an email and role. If you want to link an existing external user id,
+  // call a different endpoint or include external_user_id (optional).
+  if (!body.email || !body.role) {
+    return NextResponse.json({ error: 'email and role required' }, { status: 400 });
   }
 
   const insert = {
-    organization_id: user.orgId,
-    external_user_id: body.external_user_id,
+    organization_id: authUser!.orgId,
+    external_user_id: body.external_user_id || null,
     email: body.email || null,
     role: body.role,
-    invited_by: user.externalUserId,
-    active: true,
+    invited_by: authUser!.externalUserId,
+    active: false, // invite pending until accepted
   };
 
   const { data, error } = await serverSupabase
@@ -47,5 +72,38 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+
+  // generate invite token and return it (dev mode - in prod, send email)
+  try {
+    const { signInvite } = await import('../../../lib/invite');
+    const token = signInvite({ organization_id: insert.organization_id, role: insert.role, email: insert.email, invited_by: insert.invited_by });
+    // Attempt to send email (SendGrid or SMTP) if provider is configured
+    try {
+      const { sendInviteEmail } = await import('../../../lib/email');
+      const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.example.com'}/accept-invite?token=${token}`;
+      const subject = `You're invited to join ${authUser!.orgId} on Medihub`;
+      const html = `<p>You were invited to join Medihub as <strong>${insert.role}</strong>.</p><p>Click <a href="${inviteLink}">here to accept the invite</a>.</p>`;
+      const text = `You were invited to join Medihub as ${insert.role}. Accept: ${inviteLink}`;
+      const sendResult = await sendInviteEmail(insert.email || '', subject, html, text);
+
+      // write audit log
+      try {
+        const { logAudit } = await import('../../../lib/audit');
+        await logAudit({ organization_id: authUser!.orgId, user_id: authUser!.externalUserId, action: 'invite_staff', target_table: 'organization_staff', target_id: data?.id, details: { invite_email: insert.email, sendResult } });
+      } catch (e) {
+        console.error('audit log failed', e);
+      }
+
+      // If email was sent successfully, do not return the token. In dev or when no provider configured, return token for convenience.
+      if (sendResult.success) {
+        return NextResponse.json({ message: 'Invite sent', staff: data }, { status: 201 });
+      }
+
+      return NextResponse.json({ invite_token: token, staff: data, warn: 'email-not-sent' }, { status: 201 });
+    } catch (err: any) {
+      return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  }
 }

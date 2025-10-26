@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import serverSupabase from '../../../lib/supabaseClient';
 import { logAudit } from '../../../lib/audit';
+import { getAuthUser, requireAuthOr401 } from '../../../lib/auth';
+import { assertUserHasRole } from '../../../lib/roles';
 
 // App Router route handler for patients (GET list, POST create)
 // Dev note: this accepts headers `x-external-user-id` and `x-org-id` for
@@ -14,8 +16,17 @@ function getUserFromReq(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const user = getUserFromReq(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized - missing user/org headers (dev only)' }, { status: 401 });
+  // authenticate request
+  let authUser = null;
+  try {
+    authUser = await getAuthUser(req);
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 401 });
+  }
+  const early = requireAuthOr401(authUser);
+  if (early) return early;
+
+  const user = { externalUserId: authUser!.externalUserId, orgId: authUser!.orgId } as any;
 
   const { data, error } = await serverSupabase
     .from('patients')
@@ -28,20 +39,33 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = getUserFromReq(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized - missing user/org headers (dev only)' }, { status: 401 });
+  // authenticate request
+  let authUser2 = null;
+  try {
+    authUser2 = await getAuthUser(req);
+  } catch (err: any) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 401 });
+  }
+  const early2 = requireAuthOr401(authUser2);
+  if (early2) return early2;
+
+  const user2 = { externalUserId: authUser2!.externalUserId, orgId: authUser2!.orgId } as any;
 
   const body = await req.json();
   if (!body.first_name || !body.last_name) {
     return NextResponse.json({ error: 'first_name and last_name required' }, { status: 400 });
   }
 
+  // Only users with roles org_admin or medical_staff can create patients
+  const allowed = await assertUserHasRole(user2.externalUserId, user2.orgId || '', ['org_admin', 'medical_staff']);
+  if (!allowed) return NextResponse.json({ error: 'Forbidden - requires medical_staff or org_admin' }, { status: 403 });
+
   const insert = {
-    organization_id: user.orgId,
+  organization_id: user2.orgId,
     first_name: body.first_name,
     last_name: body.last_name,
     dob: body.dob || null,
-    created_by: user.externalUserId,
+    created_by: user2.externalUserId,
     metadata: body.metadata || {}
   };
 
@@ -56,8 +80,8 @@ export async function POST(req: NextRequest) {
     // Write audit log for create
     try {
       await logAudit({
-        organization_id: user.orgId,
-        user_id: user.externalUserId,
+    organization_id: user2.orgId,
+    user_id: user2.externalUserId,
         action: 'create_patient',
         target_table: 'patients',
         target_id: data?.id,
