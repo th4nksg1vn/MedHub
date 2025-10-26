@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import serverSupabase from '../../../../lib/supabaseClient';
 import { anonymizePatient } from '../../../../lib/anonymize';
 import { getAuthUser, requireAuthOr401 } from '../../../../lib/auth';
+import { assertUserHasRole } from '../../../../lib/roles';
 
 function toCsv(rows: string[][]) {
   return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -29,6 +30,12 @@ export async function GET(req: NextRequest) {
   const providedInternal = req.headers.get('x-internal-admin-key');
   if (!(authUser!.orgId === orgId) && providedInternal !== internalKey) {
     return NextResponse.json({ error: 'Forbidden (org mismatch)' }, { status: 403 });
+  }
+
+  // Require role: org_admin or analyst for exports
+  const allowed = await assertUserHasRole(authUser!.externalUserId, orgId, ['org_admin', 'analyst']);
+  if (!allowed && providedInternal !== internalKey) {
+    return NextResponse.json({ error: 'Forbidden - requires org_admin or analyst' }, { status: 403 });
   }
 
   const { data: patients, error } = await serverSupabase

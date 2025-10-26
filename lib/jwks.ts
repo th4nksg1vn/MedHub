@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+// Use global fetch (Node 18+ / Next.js runtime) to avoid extra dependency
 
 // Simple JWKS fetcher + cache for RS256 public keys
 type Jwk = { kty: string; kid?: string; use?: string; alg?: string; n?: string; e?: string; x5c?: string[] };
