@@ -1,20 +1,28 @@
-import { PrismaClient } from '@prisma/client';
+// lib/prisma.ts
+/* eslint-disable @typescript-eslint/no-var-requires */
+let PrismaPkg: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  PrismaPkg = require('@prisma/client');
+} catch (e) {
+  PrismaPkg = null;
+}
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-// Learn more: https://pris.ly/d/help/next-js-best-practices
+type AnyPrisma = any;
+const PrismaClientCtor: AnyPrisma = PrismaPkg
+  ? PrismaPkg.PrismaClient ?? PrismaPkg.default?.PrismaClient ?? PrismaPkg.default ?? null
+  : null;
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+const globalForPrisma = globalThis as unknown as { prisma?: AnyPrisma };
 
-export const prisma =
+export const prisma: AnyPrisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
+  (PrismaClientCtor
+    ? new PrismaClientCtor({
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      })
+    : (null as any));
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== 'production' && PrismaClientCtor) globalForPrisma.prisma = prisma;
 
 export default prisma;
-
