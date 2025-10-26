@@ -14,11 +14,13 @@ export default function PatientList() {
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/patients', { headers: { 'x-external-user-id': 'dev-user', 'x-org-id': 'dev-org' } })
-      .then((r) => r.json())
-      .then((data) => setPatients(data || []))
-      .catch(() => setPatients([]))
-      .finally(() => setLoading(false));
+    import('../lib/clientAuth').then(({ authFetch }) =>
+      authFetch('/api/patients')
+        .then((r) => r.json())
+        .then((data) => setPatients(data || []))
+        .catch(() => setPatients([]))
+        .finally(() => setLoading(false))
+    );
   }, []);
 
   if (loading) return <div>Loading patients...</div>;

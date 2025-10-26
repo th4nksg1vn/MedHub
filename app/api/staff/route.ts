@@ -77,14 +77,32 @@ export async function POST(req: NextRequest) {
   try {
     const { signInvite } = await import('../../../lib/invite');
     const token = signInvite({ organization_id: insert.organization_id, role: insert.role, email: insert.email, invited_by: insert.invited_by });
-    // write audit log
+    // Attempt to send email (SendGrid or SMTP) if provider is configured
     try {
-      const { logAudit } = await import('../../../lib/audit');
-      await logAudit({ organization_id: authUser!.orgId, user_id: authUser!.externalUserId, action: 'invite_staff', target_table: 'organization_staff', target_id: data?.id, details: { invite_email: insert.email } });
-    } catch (e) {
-      console.error('audit log failed', e);
+      const { sendInviteEmail } = await import('../../../lib/email');
+      const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.example.com'}/accept-invite?token=${token}`;
+      const subject = `You're invited to join ${authUser!.orgId} on Medihub`;
+      const html = `<p>You were invited to join Medihub as <strong>${insert.role}</strong>.</p><p>Click <a href="${inviteLink}">here to accept the invite</a>.</p>`;
+      const text = `You were invited to join Medihub as ${insert.role}. Accept: ${inviteLink}`;
+      const sendResult = await sendInviteEmail(insert.email || '', subject, html, text);
+
+      // write audit log
+      try {
+        const { logAudit } = await import('../../../lib/audit');
+        await logAudit({ organization_id: authUser!.orgId, user_id: authUser!.externalUserId, action: 'invite_staff', target_table: 'organization_staff', target_id: data?.id, details: { invite_email: insert.email, sendResult } });
+      } catch (e) {
+        console.error('audit log failed', e);
+      }
+
+      // If email was sent successfully, do not return the token. In dev or when no provider configured, return token for convenience.
+      if (sendResult.success) {
+        return NextResponse.json({ message: 'Invite sent', staff: data }, { status: 201 });
+      }
+
+      return NextResponse.json({ invite_token: token, staff: data, warn: 'email-not-sent' }, { status: 201 });
+    } catch (err: any) {
+      return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
     }
-    return NextResponse.json({ invite_token: token, staff: data }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
