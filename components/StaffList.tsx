@@ -12,10 +12,25 @@ export default function StaffList() {
     setLoading(true);
     authFetch('/api/staff')
       .then((r) => r.json())
-      .then((data) => setStaff(data || []))
+      .then((data) => {
+        // Normalize different potential response shapes.
+        // API may return an array, or an object like { staff: [...] } or { data: [...] }.
+        if (Array.isArray(data)) {
+          setStaff(data);
+        } else if (data && Array.isArray((data as any).staff)) {
+          setStaff((data as any).staff);
+        } else if (data && Array.isArray((data as any).data)) {
+          setStaff((data as any).data);
+        } else {
+          // Not an array response — log and set empty
+          console.warn('Unexpected /api/staff response shape:', data);
+          setStaff([]);
+        }
+      })
       .catch((e) => {
         // show toast on error
         console.error('Failed to load staff', e);
+        setStaff([]);
       })
       .finally(() => setLoading(false));
   }, []);
