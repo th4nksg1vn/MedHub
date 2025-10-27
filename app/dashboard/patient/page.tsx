@@ -226,6 +226,105 @@ export default function PatientDashboard() {
             </div>
           </div>
 
+          {/* Medical Records */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Medical Records</h3>
+            <div className="space-y-4">
+              {/* Lab Results */}
+              <div className="border-b border-gray-200 pb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">Blood Test Results</p>
+                    <p className="text-sm text-gray-600">Date: March 10, 2024</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Normal
+                  </span>
+                </div>
+              </div>
+
+              {/* Prescriptions */}
+              <div className="border-b border-gray-200 pb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">Prescription - Amoxicillin</p>
+                    <p className="text-sm text-gray-600">Date: March 8, 2024</p>
+                    <p className="text-sm text-gray-600">Doctor: Dr. John Doe</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              {/* Medical History */}
+              <div className="border-b border-gray-200 pb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">Diagnosis Report</p>
+                    <p className="text-sm text-gray-600">Date: March 6, 2024</p>
+                    <p className="text-sm text-gray-600">Condition: Acute Tonsillitis</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Review
+                  </span>
+                </div>
+              </div>
+
+              {/* X-Ray */}
+              <div className="border-b border-gray-200 pb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">Chest X-Ray</p>
+                    <p className="text-sm text-gray-600">Date: March 5, 2024</p>
+                    <p className="text-sm text-gray-600">Status: Clear</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Complete
+                  </span>
+                </div>
+              </div>
+
+              {/* Medical Consultation */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold text-gray-900">General Consultation</p>
+                  <p className="text-sm text-gray-600">Date: February 28, 2024</p>
+                  <p className="text-sm text-gray-600">Doctor: Dr. Jane Smith</p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Complete
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Medical Documents</h3>
+            <div className="space-y-3">
+              {[
+                { name: 'Lab_Report_20240310.pdf', type: 'Lab Results', date: 'March 10, 2024', size: '245 KB' },
+                { name: 'X-Ray_Chest_20240305.pdf', type: 'X-Ray', date: 'March 5, 2024', size: '1.2 MB' },
+                { name: 'Prescription_20240308.pdf', type: 'Prescription', date: 'March 8, 2024', size: '112 KB' },
+                { name: 'Diagnosis_Report_20240306.pdf', type: 'Diagnosis', date: 'March 6, 2024', size: '380 KB' }
+              ].map((doc, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-semibold text-sm">{doc.name}</p>
+                      <p className="text-xs text-gray-600">{doc.type} • {doc.date} • {doc.size}</p>
+                    </div>
+                  </div>
+                  <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                    View
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </DashboardLayout>
