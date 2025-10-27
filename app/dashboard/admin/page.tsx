@@ -1,234 +1,444 @@
 'use client';
 
 import DashboardLayout from '@/components/DashboardLayout';
-import dynamic from 'next/dynamic';
-import { Building, Users, Bed, Stethoscope, Calendar } from 'lucide-react';
+import { Building, Users, Bed, Stethoscope, Calendar, Plus, Search, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
-const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
+interface Patient {
+  name: string;
+  id: string;
+  admitted: string;
+  condition: string;
+  status: string;
+  statusColor: string;
+  allergies: string;
+  doctor: string;
+  specialty: string;
+  contact: string;
+  insurance: string;
+  policyId: string;
+  address: string;
+  room: string;
+  roomStatus: string;
+  roomStatusColor: string;
+}
+
+const mockPatients: Patient[] = [
+  {
+    name: 'JOHN Doe',
+    id: '123456',
+    admitted: '12/12/2023',
+    condition: 'Acute Tonsillitis',
+    status: 'Stable',
+    statusColor: 'bg-red-100 text-red-800',
+    allergies: 'No known allergies',
+    doctor: 'Dr. John Doe',
+    specialty: 'Internal Medicine',
+    contact: '12345',
+    insurance: 'PharmaSure Company',
+    policyId: '123456',
+    address: '123 Main St',
+    room: '205',
+    roomStatus: 'Available',
+    roomStatusColor: 'bg-green-100 text-green-800'
+  },
+  {
+    name: 'SARAH Smith',
+    id: '123457',
+    admitted: '11/12/2023',
+    condition: 'Hypertension',
+    status: 'Stable',
+    statusColor: 'bg-red-100 text-red-800',
+    allergies: 'Penicillin',
+    doctor: 'Dr. Jane Smith',
+    specialty: 'Cardiology',
+    contact: '23456',
+    insurance: 'HealthCare Plus',
+    policyId: '234567',
+    address: '456 Oak Ave',
+    room: '301',
+    roomStatus: 'Occupied',
+    roomStatusColor: 'bg-red-100 text-red-800'
+  },
+  {
+    name: 'MIKE Johnson',
+    id: '123458',
+    admitted: '10/12/2023',
+    condition: 'Diabetes Type 2',
+    status: 'Stable',
+    statusColor: 'bg-red-100 text-red-800',
+    allergies: 'None',
+    doctor: 'Dr. Robert Kim',
+    specialty: 'Endocrinology',
+    contact: '34567',
+    insurance: 'MediCover Inc',
+    policyId: '345678',
+    address: '789 Pine Rd',
+    room: '102',
+    roomStatus: 'Available',
+    roomStatusColor: 'bg-green-100 text-green-800'
+  }
+];
 
 export default function AdminDashboard() {
-  const patientVisitsData = {
-    series: [{
-      name: 'Patient Visits',
-      data: [120, 135, 98, 145, 132, 85, 92]
-    }],
-    options: {
-      chart: {
-        type: 'line' as const,
-        height: 350,
-        toolbar: { show: false }
-      },
-      colors: ['#3B82F6'],
-      stroke: {
-        width: 3,
-        curve: 'smooth'
-      },
-      markers: {
-        size: 5,
-        colors: ['#3B82F6']
-      },
-      xaxis: {
-        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      },
-      yaxis: {
-        min: 0,
-        max: 160
-      },
-      grid: {
-        borderColor: '#E5E7EB'
-      }
-    }
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>(mockPatients);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'doctors' | 'patients'>('patients');
+
+  const handleCreatePatient = (formData: any) => {
+    const newPatient: Patient = {
+      name: formData.name.toUpperCase(),
+      id: `1234${Math.floor(Math.random() * 1000)}`,
+      admitted: new Date().toLocaleDateString(),
+      condition: formData.condition || 'General Checkup',
+      status: 'Stable',
+      statusColor: 'bg-red-100 text-red-800',
+      allergies: formData.allergies || 'None',
+      doctor: formData.doctor || 'Dr. General',
+      specialty: formData.specialty || 'General Medicine',
+      contact: formData.contact || '00000',
+      insurance: formData.insurance || 'Self Pay',
+      policyId: formData.policyId || 'N/A',
+      address: formData.address || 'N/A',
+      room: formData.room || 'N/A',
+      roomStatus: 'Occupied',
+      roomStatusColor: 'bg-red-100 text-red-800'
+    };
+    setPatients([newPatient, ...patients]);
+    setShowCreateModal(false);
   };
 
-  const departmentData = {
-    series: [35, 20, 18, 15, 12],
-    options: {
-      chart: {
-        type: 'donut' as const,
-        height: 350
-      },
-      colors: ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
-      labels: ['Emergency', 'Cardiology', 'Pediatrics', 'Orthopedics', 'Others'],
-      legend: {
-        position: 'bottom'
-      },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '60%'
-          }
-        }
-      }
-    }
-  };
-
-  const staff = [
-    { name: 'Dr. Michael Chen', specialty: 'Cardiologist', ext: '2341', status: 'Available', statusColor: 'bg-green-100 text-green-800' },
-    { name: 'Dr. Emily Rodriguez', specialty: 'Pediatrician', ext: '2156', status: 'In Surgery', statusColor: 'bg-yellow-100 text-yellow-800' },
-    { name: 'Nurse Jennifer Adams', specialty: 'ICU Specialist', ext: '2789', status: 'Available', statusColor: 'bg-green-100 text-green-800' },
-    { name: 'Dr. Robert Kim', specialty: 'Orthopedic Surgeon', ext: '2445', status: 'With Patient', statusColor: 'bg-orange-100 text-orange-800' }
-  ];
-
-  const patients = [
-    { name: 'John Anderson', id: 'P-2024-001', lastVisit: 'Today, 2:30 PM', status: 'Stable', statusColor: 'bg-green-100 text-green-800' },
-    { name: 'Sarah Williams', id: 'P-2024-002', lastVisit: 'Today, 1:15 PM', status: 'Recovering', statusColor: 'bg-blue-100 text-blue-800' },
-    { name: 'Michael Brown', id: 'P-2024-003', lastVisit: 'Yesterday, 4:45 PM', status: 'Critical', statusColor: 'bg-red-100 text-red-800' },
-    { name: 'Lisa Davis', id: 'P-2024-004', lastVisit: 'Yesterday, 11:20 AM', status: 'Stable', statusColor: 'bg-green-100 text-green-800' }
-  ];
+  const filteredPatients = patients.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.id.includes(searchQuery)
+  );
 
   return (
     <DashboardLayout userRole="admin">
-      {/* Header */}
-      <header className="bg-white shadow-sm px-8 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Building className="w-8 h-8 text-blue-700" />
+      <div className="flex-1 bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div>
-            <h2 className="text-2xl font-bold">Dashboard Overview</h2>
-            <p className="text-gray-600">Welcome back! Here's what's happening at your hospital today.</p>
+            <h2 className="text-3xl font-bold text-gray-900">Dashboard Overview</h2>
+            <p className="text-gray-600 mt-1">Welcome Back! Here's what is happening at your Hospital today</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="font-semibold">Dr. Sarah Johnson</p>
-            <p className="text-sm text-gray-600">Administrator</p>
-          </div>
-          <div className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-white font-semibold">
-            SJ
-          </div>
-        </div>
-      </header>
 
-      <div className="p-8 space-y-6">
-        {/* Hospital Info Card */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-8 rounded-xl shadow-lg">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-2">Central Medical Hospital</h3>
-              <p className="text-blue-100 mb-6">123 Healthcare Avenue, Medical District, City 12345</p>
-              <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-blue-200">24/7 Emergency Care</p>
+        <div className="p-8 space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-blue-600 text-white p-6 rounded-lg shadow">
+              <p className="text-gray-200 mb-2">Total Doctors</p>
+              <p className="text-4xl font-bold">245</p>
+            </div>
+            <div className="bg-green-600 text-white p-6 rounded-lg shadow">
+              <p className="text-gray-200 mb-2">Total Patients</p>
+              <p className="text-4xl font-bold">{patients.length}</p>
+            </div>
+            <div className="bg-purple-600 text-white p-6 rounded-lg shadow">
+              <p className="text-gray-200 mb-2">Available Beds</p>
+              <p className="text-4xl font-bold">142</p>
+            </div>
+          </div>
+
+          {/* Patient Records Section */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="border-b border-gray-200">
+              <nav className="flex">
+                <button
+                  onClick={() => setActiveTab('doctors')}
+                  className={`px-6 py-4 text-sm font-medium ${
+                    activeTab === 'doctors'
+                      ? 'border-b-2 border-blue-600 text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Medical Professionals
+                </button>
+                <button
+                  onClick={() => setActiveTab('patients')}
+                  className={`px-6 py-4 text-sm font-medium ${
+                    activeTab === 'patients'
+                      ? 'border-b-2 border-blue-600 text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Patients
+                </button>
+              </nav>
+            </div>
+
+            {activeTab === 'patients' && (
+              <div className="p-6">
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Patient Records</h3>
+                      <p className="text-sm text-gray-600">Manage all patient information</p>
+                    </div>
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add New Patient
+                    </button>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="flex gap-4">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <select className="px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <option>All Roles</option>
+                      <option>Stable</option>
+                      <option>Critical</option>
+                      <option>Recovering</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-blue-200">15+ Departments</p>
-                </div>
-                <div>
-                  <p className="text-sm text-blue-200">500+ Bed Capacity</p>
+
+                {/* Patient Table */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          PATIENT
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          MEDICAL INFO
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          PRIMARY DOCTOR
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          INSURANCE
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ROOM
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ACTION
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredPatients.map((patient, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="font-bold text-gray-900">{patient.name}</div>
+                              <div className="text-sm text-gray-500">ID: {patient.id}</div>
+                              <div className="text-sm text-gray-500">Admitted: {patient.admitted}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-gray-900">{patient.condition}</div>
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${patient.statusColor}`}>
+                                {patient.status}
+                              </span>
+                              <div className="text-sm text-gray-500 mt-1">Notes: {patient.allergies}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-blue-600">{patient.doctor}</div>
+                              <div className="text-sm text-gray-500">{patient.specialty}</div>
+                              <div className="text-sm text-gray-500">Contact: {patient.contact}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-gray-900">{patient.insurance}</div>
+                              <div className="text-sm text-gray-500">Policy ID: {patient.policyId}</div>
+                              <div className="text-sm text-gray-500">Address: {patient.address}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-semibold text-gray-900">ROOM: {patient.room}</div>
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${patient.roomStatusColor}`}>
+                                {patient.roomStatus}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-            <Building className="w-32 h-32 text-blue-300 opacity-50" />
-          </div>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center gap-3 mb-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-gray-600">Total Professionals</span>
-            </div>
-            <p className="text-3xl font-bold">245</p>
-            <p className="text-sm text-green-600">+12 this month</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center gap-3 mb-2">
-              <Users className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-gray-600">Total Patients</span>
-            </div>
-            <p className="text-3xl font-bold">1,847</p>
-            <p className="text-sm text-green-600">+89 this week</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center gap-3 mb-2">
-              <Calendar className="w-5 h-5 text-yellow-600" />
-              <span className="text-sm text-gray-600">Today's Appointments</span>
-            </div>
-            <p className="text-3xl font-bold">127</p>
-            <p className="text-sm text-yellow-600">18 pending</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center gap-3 mb-2">
-              <Bed className="w-5 h-5 text-purple-600" />
-              <span className="text-sm text-gray-600">Bed Occupancy</span>
-            </div>
-            <p className="text-3xl font-bold">78%</p>
-            <p className="text-sm text-gray-600">392 of 500 beds</p>
-          </div>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Patient Visits (Last 7 Days)</h3>
-            <Chart
-              options={patientVisitsData.options}
-              series={patientVisitsData.series}
-              type="line"
-              height={350}
-            />
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-4">Department Distribution</h3>
-            <Chart
-              options={departmentData.options}
-              series={departmentData.series}
-              type="donut"
-              height={350}
-            />
-          </div>
-        </div>
-
-        {/* Lists */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Medical Staff</h3>
-              <a href="#" className="text-sm text-blue-600 hover:underline">View All</a>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {staff.map((person, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Stethoscope className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">{person.name}</p>
-                    <p className="text-xs text-gray-600">{person.specialty} • Ext: {person.ext}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${person.statusColor}`}>
-                    {person.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Recent Patients</h3>
-              <a href="#" className="text-sm text-blue-600 hover:underline">View All</a>
-            </div>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {patients.map((patient, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">{patient.name}</p>
-                    <p className="text-xs text-gray-600">ID: {patient.id} • {patient.lastVisit}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${patient.statusColor}`}>
-                    {patient.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Create Patient Modal */}
+      {showCreateModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateModal(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold">Add New Patient</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleCreatePatient(Object.fromEntries(formData));
+                e.currentTarget.reset();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+                  <input
+                    name="condition"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Acute Tonsillitis"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Primary Doctor</label>
+                  <input
+                    name="doctor"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Dr. John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
+                  <input
+                    name="specialty"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Internal Medicine"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Insurance</label>
+                  <input
+                    name="insurance"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="PharmaSure Company"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Policy ID</label>
+                  <input
+                    name="policyId"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="123456"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
+                  <input
+                    name="room"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="205"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact</label>
+                  <input
+                    name="contact"
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="12345"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Allergies</label>
+                <input
+                  name="allergies"
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="No known allergies"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <input
+                  name="address"
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="123 Main St"
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Create Patient
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
-

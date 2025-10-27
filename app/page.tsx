@@ -105,14 +105,20 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-gray-50 p-6 rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-gray-700 rounded-full mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                AI-Health Predictions
-              </h3>
-              <p className="text-gray-600">
-                Personalized health predictions based on your medical history and real-time data analysis.
-              </p>
+            <div className="bg-gray-50 p-6 rounded-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gray-100 bg-opacity-60 backdrop-blur-sm z-10"></div>
+              <div className="relative">
+                <div className="w-12 h-12 bg-gray-700 rounded-full mb-4 opacity-50"></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  AI-Health Predictions
+                </h3>
+                <p className="text-gray-600 mb-3">
+                  Personalized health predictions based on your medical history and real-time data analysis.
+                </p>
+                <span className="inline-flex px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 rounded-full">
+                  Coming Soon
+                </span>
+              </div>
             </div>
 
             {/* Feature 2 */}

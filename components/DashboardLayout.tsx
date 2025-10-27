@@ -34,7 +34,7 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-gradient-to-b from-blue-700 to-blue-800 text-white flex flex-col">
+      <aside className="w-64 bg-gradient-to-b from-blue-700 to-blue-800 text-white flex flex-col fixed h-screen">
         <div className="p-6 flex items-center gap-3 border-b border-blue-600">
           <img 
             src="https://g9kbtbs1bu.ufs.sh/f/woziFUfAWTFp7BlfiEvRlS1GrWLQhwZMzocm87npUf63sV5v" 
@@ -44,7 +44,7 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
           <h1 className="text-xl font-bold">Medihub</h1>
         </div>
         
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <a href="#" className="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg">
             <CalendarCheck className="w-5 h-5" />
             <span>Dashboard</span>
@@ -52,10 +52,6 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
           
           {userRole === 'patient' && (
             <>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-lg">
-                <Calendar className="w-5 h-5" />
-                <span>My Appointments</span>
-              </a>
               <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-lg">
                 <Building className="w-5 h-5" />
                 <span>My Records</span>
@@ -98,7 +94,7 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 ml-64 overflow-y-auto">
         {children}
       </main>
     </div>
