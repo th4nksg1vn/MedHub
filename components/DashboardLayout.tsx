@@ -86,10 +86,13 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
         </nav>
 
         <div className="p-4 border-t border-blue-600">
-          <a href="#" className="flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-lg">
+          <button 
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-700 rounded-lg text-left"
+          >
             <LogOut className="w-5 h-5" />
-            <span onClick={handleSignOut}>Logout</span>
-          </a>
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
